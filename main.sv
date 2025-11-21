@@ -387,10 +387,12 @@ module control_unit(
 							write_mem <= 0;
 							stage <= 0;
 						end
-						7'b0000011, 7'b0100011: begin // acesso a memoria
-							ula_src_a <= 2'b01;
-							ula_src_b <= 2'b10;
+						7'b0000011: begin // load word
+							read_mem <= 1;
+							i_ou_d <= 1;
 							//remaining
+							ula_src_a <= 2'b0;
+							ula_src_b <= 2'b00;
 							i_ou_d <= 0;
 							read_mem <= 0;
 							write_ir <= 0;
@@ -402,6 +404,25 @@ module control_unit(
 							reg_write_src <= 0;
 							pc_write_cond <= 0;
 							write_mem <= 0;
+							stage <= stage + 1'b1;
+						end
+						7'b0100011: begin // store word
+							i_ou_d <= 1;
+							write_mem <= 1;
+							//remaining
+							read_mem <= 0;
+							ula_src_a <= 2'b0;
+							ula_src_b <= 2'b00;
+							i_ou_d <= 0;
+							read_mem <= 0;
+							write_ir <= 0;
+							pc_write <= 0;
+							write_pc_bkp <= 0;
+							ula_op <= 5'b0;
+							pc_src <= 0;
+							write_reg <= 0;
+							reg_write_src <= 0;
+							pc_write_cond <= 0;
 							stage <= stage + 1'b1;
 						end
 						default: begin
@@ -423,10 +444,64 @@ module control_unit(
 					endcase
 			end
 			3'b101: begin
-				stage <= 0;
+				case (opcode)
+						7'b0000011: begin // load word
+							read_mem <= 1;
+							i_ou_d <= 1;
+							//remaining
+							ula_src_a <= 2'b0;
+							ula_src_b <= 2'b00;
+							i_ou_d <= 0;
+							read_mem <= 0;
+							write_ir <= 0;
+							pc_write <= 0;
+							write_pc_bkp <= 0;
+							ula_op <= 5'b0;
+							pc_src <= 0;
+							write_reg <= 0;
+							reg_write_src <= 0;
+							pc_write_cond <= 0;
+							write_mem <= 0;
+							stage <= stage + 1'b1;
+						end
+						7'b0100011: begin // store word
+							i_ou_d <= 1;
+							write_mem <= 1;
+							//remaining
+							read_mem <= 0;
+							ula_src_a <= 2'b0;
+							ula_src_b <= 2'b00;
+							i_ou_d <= 0;
+							read_mem <= 0;
+							write_ir <= 0;
+							pc_write <= 0;
+							write_pc_bkp <= 0;
+							ula_op <= 5'b0;
+							pc_src <= 0;
+							write_reg <= 0;
+							reg_write_src <= 0;
+							pc_write_cond <= 0;
+							stage <= 0;
+						end
+				endcase
 			end
 			3'b110: begin
-				stage <= 0;
+				write_reg <= 0;
+				reg_write_src <= 2'b10;
+				// remaining
+				read_mem <= 0;
+				i_ou_d <= 0;
+				ula_src_a <= 2'b0;
+				ula_src_b <= 2'b00;
+				i_ou_d <= 0;
+				read_mem <= 0;
+				write_ir <= 0;
+				pc_write <= 0;
+				write_pc_bkp <= 0;
+				ula_op <= 5'b0;
+				pc_src <= 0;
+				pc_write_cond <= 0;
+				write_mem <= 0;
 			end
 			default: begin
 				stage <= 0;
@@ -434,7 +509,33 @@ module control_unit(
 
 		endcase
 	end
-	
+endmodule
+
+module memory(
+	input logic clk,
+	input logic [31:0] add,
+	input logic write,
+	input logic read,
+	input logic i_ou_d,
+	output logic [31:0] out
+);
+	instruction_test i(	
+		.address(add[11:2]),
+		.clock(clk),
+		.data(write),
+		.rden((i_ou_d) ? read : 0),
+		.wren((i_ou_d) ? write : 0)
+		.q(i_data)
+		);
+	data_test i(	
+		.address(add[11:2]),
+		.clock(clk),
+		.data(write),
+		.rden((i_ou_d) ? 0 : read ),
+		.wren((i_ou_d) ? 0 : write)
+		.q(d_data)
+		);
+		assign out <= (i_ou_d) ? i_data : d_data;
 endmodule
 
 module main(
@@ -539,6 +640,15 @@ module main(
 	imd_generator imd(	
 		.instruction(instruct),
 		.imd(immediate)
+	);
+
+	memory mem(
+	.clk(clk),
+	.add(mem_add_in),
+	.write(write_mem),
+	.read(read_mem),
+	.i_ou_d(i_ou_d),
+	.out(mem_out)
 	);
 
 	//wire [31:0] pc_bkp;
