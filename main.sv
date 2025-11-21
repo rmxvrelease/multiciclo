@@ -514,28 +514,30 @@ endmodule
 module memory(
 	input logic clk,
 	input logic [31:0] add,
+	input logic [31:0] write_data,
 	input logic write,
 	input logic read,
 	input logic i_ou_d,
 	output logic [31:0] out
 );
+	wire [31:0] i_data, d_data;
 	instruction_test i(	
 		.address(add[11:2]),
 		.clock(clk),
-		.data(write),
-		.rden((i_ou_d) ? read : 0),
-		.wren((i_ou_d) ? write : 0)
+		.data(write_data),
+		.rden((i_ou_d) ? read : 1'b0),
+		.wren((i_ou_d) ? write : 1'b0),
 		.q(i_data)
 		);
-	data_test i(	
+	data_test d(	
 		.address(add[11:2]),
 		.clock(clk),
-		.data(write),
-		.rden((i_ou_d) ? 0 : read ),
-		.wren((i_ou_d) ? 0 : write)
+		.data(write_data),
+		.rden((i_ou_d) ? 1'b0 : read ),
+		.wren((i_ou_d) ? 1'b0 : write),
 		.q(d_data)
 		);
-		assign out <= (i_ou_d) ? i_data : d_data;
+		assign out = (i_ou_d) ? i_data : d_data;
 endmodule
 
 module main(
@@ -543,7 +545,6 @@ module main(
   // PROPÓSITO DE TESTE
   // Sinais de controle do data path
 	// saida da memória de dados
-	input logic [31:0] mem_out,
 	// numero do registrador de display
 	input logic [4:0] rs3,
 
@@ -563,6 +564,7 @@ module main(
 	output logic read_mem,
 	output logic write_mem,
 	// saidas debug
+	output logic [31:0] mem_out,
 	output logic [31:0] instruct,
 	output logic [4:0] reg_src_1,
 	output logic [4:0] reg_src_2,
@@ -645,6 +647,7 @@ module main(
 	memory mem(
 	.clk(clk),
 	.add(mem_add_in),
+	.write_data(data_b),
 	.write(write_mem),
 	.read(read_mem),
 	.i_ou_d(i_ou_d),
