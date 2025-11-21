@@ -282,7 +282,7 @@ module control_unit(
 							write_mem <= 0;
 							stage <= 0;
 						end
-						7'b0010011: begin // beq
+						7'b1100011: begin // beq
 							pc_src <= 1;
 							ula_src_a <= 2'b1;
 							ula_src_b <= 2'b0;
