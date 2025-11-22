@@ -168,7 +168,8 @@ module control_unit(
 	output logic [1:0] reg_write_src,
 	output logic i_ou_d,
 	output logic read_mem,
-	output logic write_mem
+	output logic write_mem,
+	output logic [2:0] ostage
 );
 	wire [2:0] funct3;
 	wire [6:0] funct7;
@@ -179,6 +180,7 @@ module control_unit(
 	assign opcode = instruction[6:0];
 
 	reg [2:0] stage;
+	assign ostage = stage;
 
 	ctrl_ula_r ctrl_ula_r_1(		
 	.funct7(funct7),
@@ -402,8 +404,6 @@ module control_unit(
 							//remaining
 							ula_src_a <= 2'b0;
 							ula_src_b <= 2'b00;
-							i_ou_d <= 0;
-							read_mem <= 0;
 							write_ir <= 0;
 							pc_write <= 0;
 							write_pc_bkp <= 0;
@@ -452,7 +452,7 @@ module control_unit(
 						end
 					endcase
 			end
-			3'b101: begin
+			3'b101: begin  // estagio 4b
 				case (opcode)
 						7'b0000011: begin // load word
 							read_mem <= 1;
@@ -460,7 +460,6 @@ module control_unit(
 							//remaining
 							ula_src_a <= 2'b0;
 							ula_src_b <= 2'b00;
-							i_ou_d <= 0;
 							read_mem <= 0;
 							write_ir <= 0;
 							pc_write <= 0;
@@ -495,7 +494,7 @@ module control_unit(
 				endcase
 			end
 			3'b110: begin
-				write_reg <= 0;
+				write_reg <= 1;
 				reg_write_src <= 2'b10;
 				// remaining
 				read_mem <= 0;
@@ -511,6 +510,7 @@ module control_unit(
 				pc_src <= 0;
 				pc_write_cond <= 0;
 				write_mem <= 0;
+				stage <= 0;
 			end
 			default: begin
 				stage <= 0;
@@ -610,7 +610,8 @@ module main(
 	output logic [31:0] pc_out,
 	output logic [31:0] pc_bkp,
  	output logic pc_ctrl_signal,
-	output logic ula_zero
+	output logic ula_zero,
+	output logic [2:0] stage
 );
 	assign reg_src_1 = instruct[19:15];
 	assign reg_src_2 = instruct[24:20];
@@ -630,7 +631,8 @@ module main(
 	.reg_write_src(reg_write_src),
 	.i_ou_d(i_ou_d),
 	.read_mem(read_mem),
-	.write_mem(write_mem)
+	.write_mem(write_mem),
+	.ostage(stage)
 	);
 
 	instruction_reg ir(
