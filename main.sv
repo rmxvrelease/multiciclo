@@ -97,6 +97,7 @@ module imd_generator(
         7'b0100011: imd <= {{20{instruction[31]}}, instruction[31:25], instruction[11:7]};
         7'b1100011: imd <= {{20{instruction[31]}}, instruction[7], instruction[30:25], instruction[11:8], 1'b0};
         7'b1101111: imd <= {{12{instruction[31]}}, instruction[19:12], instruction[20], instruction[30:21], 1'b0};				
+				7'b0110111: imd <= {instruction[31:12], 12'b0};
         default:
             imd <= 32'b0;
     endcase
@@ -114,9 +115,17 @@ module instruction_reg(
   always @(posedge clk) data <= (we) ? in : data;
 endmodule
 
-module ctrl_block();
-endmodule
-
+// module pc_block(
+// 	input logic we,
+// 	input logic clk,
+// 	input logic [31:0] in,
+// 	output logic [31:0] out
+// );
+// 	logic [31:0] data;
+// 	initial data = 32'b
+// 	assign out = data;
+//   always @(posedge clk) data <= (we) ? in : data;
+// endmodule
 
 module pc_write_control_circuit(
 	input logic zero, write_cond, write,
@@ -521,24 +530,43 @@ module memory(
 	output logic [31:0] out
 );
 	wire [31:0] i_data, d_data;
-	instruction_test i(	
+	text i(	
 		.address(add[11:2]),
 		.clock(clk),
 		.data(write_data),
-		.rden((i_ou_d) ? read : 1'b0),
-		.wren((i_ou_d) ? write : 1'b0),
+		.rden(1'b1),
+		.wren((i_ou_d) ? 1'b0 : write),
 		.q(i_data)
 		);
-	data_test d(	
+	data d(	
 		.address(add[11:2]),
 		.clock(clk),
 		.data(write_data),
-		.rden((i_ou_d) ? 1'b0 : read ),
-		.wren((i_ou_d) ? 1'b0 : write),
+		.rden(1'b1),
+		.wren((i_ou_d) ? write : 1'b0),
 		.q(d_data)
 		);
-		assign out = (i_ou_d) ? i_data : d_data;
+		assign out = (i_ou_d) ? d_data : i_data;
 endmodule
+
+// module memory(
+// 	input logic clk,
+// 	input logic [31:0] add,
+// 	input logic [31:0] write_data,
+// 	input logic write,
+// 	input logic read,
+// 	input logic i_ou_d,
+// 	output logic [31:0] out
+// );
+// 	text i(	
+// 		.address(add[11:2]),
+// 		.clock(clk),
+// 		.data(write_data),
+// 		.rden(read),
+// 		.wren(write),
+// 		.q(out)
+// 		);
+// endmodule
 
 module main(
   input logic clk,
